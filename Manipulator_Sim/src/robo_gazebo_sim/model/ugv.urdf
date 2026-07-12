@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<robot name="PENSAR" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- [NOVO] Adicionado link 'world' e 'world_fixed' para fixar o robô no ambiente simulado (evita queda) -->
+    <link name="world"/>
+    <joint name="world_fixed" type="fixed">
+        <parent link="world"/>
+        <child link="base_link"/>
+    </joint>
+
+    <!-- Macro para criar links (partes físicas) do braço robótico com propriedades visuais, de colisão e inerciais -->
+    <xacro:macro name = "arm_links" params="lenght width name mass">
+        <link name="${name}_link">
+            <visual> <!-- Model that you see on the visualization -->
+                <geometry>
+                    <box size="${width} ${width} ${lenght}"/>
+                </geometry>
+                <origin rpy ="0 0 0" xyz="0 0 ${lenght/2}"/>
+                <material name ="red">
+                    <color rgba="1 0 0 1"/>
+                </material>
+            </visual>
+
+            <collision>
+                <geometry>
+                    <box size="${width} ${width} ${lenght}"/>
+                </geometry>
+                <origin rpy ="0 0 0" xyz="0 0 ${lenght/2}"/>
+            </collision>
+
+            <inertial>
+                <mass value = "${mass}"/>
+                <inertia
+                    ixx="1e-3" ixy="0" ixz="0"
+                    iyy="1e-3" iyz="0"
+                    izz="1e-3"
+                />
+            </inertial>
+        </link>
+    </xacro:macro>
+
+    <!-- Macro para criar juntas (conexões móveis) do tipo revolução entre os links -->
+    <xacro:macro name="joint" params="name parent child origin_xyz origin_rpy lower_limit upper_limit axis">
+        <joint name="${name}" type="revolute">
+            <parent link="${parent}"/>
+            <child link="${child}"/>
+            <origin xyz="${origin_xyz}" rpy="${origin_rpy}"/>
+            <axis xyz="${axis}"/>
+            <limit lower="${lower_limit}" upper="${upper_limit}" effort="100" velocity="0.1"/>
+        </joint>
+    </xacro:macro>
+
+    <!-- Instanciação dos links do braço utilizando a macro 'arm_links' -->
+    <xacro:arm_links name = "base" lenght = "0.6" width = "0.3" mass = "100.0"/>
+    <xacro:arm_links name = "second" lenght = "0.6" width = "0.25" mass = "1.0"/>
+    <xacro:arm_links name = "third" lenght = "0.6" width = "0.30" mass = "1.0"/>
+    <xacro:arm_links name = "fourth" lenght = "0.6" width = "0.25" mass = "1.0"/>
+    <xacro:arm_links name = "hand" lenght = "0.2" width = "0.20" mass = "1.0"/>
+    <xacro:arm_links name = "right_gripper" lenght = "0.15" width = "0.05" mass = "1.0"/>
+    <xacro:arm_links name = "left_gripper" lenght = "0.15" width = "0.05" mass = "1.0"/>
+    
+    <!-- Instanciação das juntas do braço utilizando a macro 'joint' -->
+    <xacro:joint name="base_second_joint" parent="base_link" child="second_link" origin_xyz="0 0 0.6" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
+    <xacro:joint name="second_third_joint" parent="second_link" child="third_link" origin_xyz="0 0 0.6" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
+    <xacro:joint name="third_fourth_joint" parent="third_link" child="fourth_link" origin_xyz="0 0 0.6" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
+    <xacro:joint name="fourth_hand_joint" parent="fourth_link" child="hand_link" origin_xyz="0 0 0.6" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
+    <xacro:joint name="hand_right_gripper_joint" parent="hand_link" child="right_gripper_link" origin_xyz="0 0.125 0.1" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
+    <xacro:joint name="hand_left_gripper_joint" parent="hand_link" child="left_gripper_link" origin_xyz="0 -0.125 0.1" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
+
+    <!-- <joint name="joint _name">
+        <axis .../>
+        <parent link .../>
+        <child link .../>
+    </joint>-->
+
+    <!-- Configuração do ros2_control para o sistema do Gazebo Sim -->
+    <ros2_control name="GazeboSimSystem" type="system">
+        <!-- [NOVO] Define a interface de hardware para o Gazebo Sim control -->
+        <hardware>
+            <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+        </hardware>
+
+        <!-- Definição das interfaces de comando e estado para cada junta -->
+        <joint name="base_second_joint">
+            <command_interface name="position"/>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="second_third_joint">
+            <command_interface name="position"/>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="third_fourth_joint">
+            <command_interface name="position"/>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="fourth_hand_joint">
+            <command_interface name="position"/>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="hand_right_gripper_joint">
+            <command_interface name="position"/>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity"/>
+        </joint>
+        <joint name="hand_left_gripper_joint">
+            <command_interface name="position"/>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity"/>
+        </joint>
+    </ros2_control>
+
+    <!-- [NOVO] Adiciona o plugin do Gazebo Sim para carregar o ros2_control -->
+    <gazebo>
+        <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <parameters>$(find robo_gazebo_sim)/parameters/controllers.yaml</parameters>
+        </plugin>
+    </gazebo>
+</robot>

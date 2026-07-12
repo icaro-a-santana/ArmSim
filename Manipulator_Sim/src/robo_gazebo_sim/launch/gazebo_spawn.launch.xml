@@ -1,0 +1,66 @@
+<launch>
+  <!-- Argumentos do launch para permitir personalização na execução -->
+  <arg name="package_name" default="robo_gazebo_sim"/>
+  <arg name="urdf_file" default="ugv.urdf"/>
+  <arg name="gz_args" default="-r empty.sdf"/>
+  
+  <!-- Variáveis locais com os caminhos dos pacotes necessários -->
+  <let name="pkg_share" value="$(find-pkg-share $(var package_name))"/>
+  <let name="urdf_path" value="$(var pkg_share)/model/$(var urdf_file)"/>
+  <let name="moveit_config_pkg" value="$(find-pkg-share robo_moveit_config)"/>
+
+  <!-- Inicia o simulador Gazebo Sim com o mundo vazio e argumentos especificados -->
+  <include file="$(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py">
+    <arg name="gz_args" value="$(var gz_args)"/>
+  </include>
+
+  <!-- Publica o estado do robô (transforms TF) a partir do URDF -->
+  <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="screen">
+    <param name="robot_description" value="$(command 'xacro $(var urdf_path)')" type="str"/>
+    <param name="use_sim_time" value="true"/>
+  </node>
+
+  <!-- Faz o spawn (criação) do robô no Gazebo usando a descrição do 'robot_description' -->
+  <node pkg="ros_gz_sim" exec="create" name="spawn_urdf" output="screen"
+        args="-topic robot_description -name meu_robo_id -x 0.0 -y 0.0 -z 0.5"/>
+
+  <!-- Ponte de comunicação para sincronizar o relógio do ROS com o relógio do Gazebo -->
+  <node pkg="ros_gz_bridge" exec="parameter_bridge" name="clock_bridge" output="screen"
+        args="/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock"/>
+
+  <!-- [NOVO] Spawners do ros2_control adicionados para inicializar os controladores -->
+  <!-- Inicializa o publicador de estados das juntas (lê a posição atual das juntas) -->
+  <node pkg="controller_manager" exec="spawner" name="joint_state_broadcaster_spawner" args="joint_state_broadcaster"/>
+  <!-- Inicializa o controlador de trajetória do braço -->
+  <node pkg="controller_manager" exec="spawner" name="arm_controller_spawner" args="arm_controller"/>
+  <!-- Inicializa o controlador de trajetória da garra/gripper -->
+  <node pkg="controller_manager" exec="spawner" name="gripper_controller_spawner" args="gripper_controller"/>
+
+  <!-- [NOVO] Adicionado o nó move_group do MoveIt com todas as configurações necessárias lidas do pacote robo_moveit_config -->
+  <!-- Este nó é responsável pelo planejamento de movimento e cinemática -->
+  <node pkg="moveit_ros_move_group" exec="move_group" name="move_group" output="screen">
+    <param name="use_sim_time" value="true"/>
+    <param name="robot_description" value="$(command 'xacro $(var urdf_path)')" type="str"/>
+    <param name="robot_description_semantic" value="$(command 'cat $(var moveit_config_pkg)/config/ugv.srdf')" type="str"/>
+    <param name="publish_robot_description_semantic" value="true"/>
+    <param name="planning_scene_monitor_options.publish_planning_scene" value="true"/>
+    <param name="planning_scene_monitor_options.publish_geometry_updates" value="true"/>
+    <param name="planning_scene_monitor_options.publish_state_updates" value="true"/>
+    <param name="planning_scene_monitor_options.publish_transforms_updates" value="true"/>
+    
+    <!-- Plugin de planejamento de trajetória: OMPL é o padrão do MoveIt -->
+    <param name="planning_plugin" value="ompl_interface/OMPLPlanner"/>
+    <param name="request_adapters" value="default_planner_request_adapters/AddTimeOptimalParameterization default_planner_request_adapters/FixWorkspaceBounds default_planner_request_adapters/FixStartStateBounds default_planner_request_adapters/FixStartStateCollision default_planner_request_adapters/FixStartStatePathConstraints"/>
+
+    <!-- Carregamento das configurações de limites de juntas e cinemática -->
+    <param from="$(var moveit_config_pkg)/config/kinematics.yaml"/>
+    <param from="$(var moveit_config_pkg)/config/joint_limits.yaml"/>
+    <param from="$(var moveit_config_pkg)/config/moveit_controllers.yaml"/>
+    
+    <param name="moveit_controller_manager" value="moveit_simple_controller_manager/MoveItSimpleControllerManager"/>
+    <param name="moveit_manage_controllers" value="true"/>
+    <param name="trajectory_execution.allowed_execution_duration_scaling" value="1.2"/>
+    <param name="trajectory_execution.allowed_goal_duration_margin" value="0.5"/>
+    <param name="trajectory_execution.allowed_start_tolerance" value="0.01"/>
+  </node>
+</launch>

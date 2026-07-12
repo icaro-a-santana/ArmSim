@@ -1,0 +1,20 @@
+/**:
+  ros__parameters:
+    robot_description_kinematics:
+      # [ARQUIVO NOVO] Configurações de Cinemática Inversa (IK) do MoveIt
+      # Este arquivo define como o MoveIt vai calcular os ângulos das juntas a partir de uma coordenada XYZ no espaço
+
+      arm:
+        # Plugin usado para resolver a cinemática inversa (KDL é o padrão do MoveIt)
+        kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+
+        # Resolução da busca: o quão refinada é a exploração de espaço para achar a solução (em radianos)
+        kinematics_solver_search_resolution: 0.005
+
+        # Tempo máximo que o solver vai tentar achar uma solução antes de desistir (em segundos)
+        kinematics_solver_timeout: 0.005
+
+        # [MUITO IMPORTANTE] Como o robô só tem 4 graus de liberdade e gira no mesmo eixo (é um braço planar 2D),
+        # ele fisicamente não consegue alcançar qualquer orientação (Roll, Pitch, Yaw) no espaço 3D.
+        # Ativar position_only_ik garante que o MoveIt tente apenas atingir a posição XYZ, ignorando a orientação.
+        position_only_ik: true
