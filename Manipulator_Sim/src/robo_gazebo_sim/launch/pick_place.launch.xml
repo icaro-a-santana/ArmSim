@@ -1,6 +1,6 @@
 <launch>
   <arg name="package_name" default="robo_gazebo_sim"/>
-  <arg name="urdf_file" default="ugv.urdf"/>
+  <arg name="urdf_file" default="arm.urdf"/>
   
   <let name="pkg_share" value="$(find-pkg-share $(var package_name))"/>
   <let name="urdf_path" value="$(var pkg_share)/model/$(var urdf_file)"/>

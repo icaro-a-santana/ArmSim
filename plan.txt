@@ -1,0 +1,4 @@
+- Criar e visualizar modelo com o RViz
+- visualizar
+- configurar links e joints
+- controlar estado das joints

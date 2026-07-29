@@ -1,7 +1,7 @@
 <launch>
   <!-- Argumentos do launch para permitir personalização na execução -->
   <arg name="package_name" default="robo_gazebo_sim"/>
-  <arg name="urdf_file" default="ugv.urdf"/>
+  <arg name="urdf_file" default="arm.urdf"/>
   <arg name="gz_args" default="-r empty.sdf"/>
   
   <!-- Variáveis locais com os caminhos dos pacotes necessários -->

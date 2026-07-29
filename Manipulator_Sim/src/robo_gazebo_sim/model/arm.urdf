@@ -1,17 +1,25 @@
 <?xml version="1.0"?>
-<robot name="PENSAR" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<!-- ARQUIVO DE DESCRIÇÃO DO MANIPULADOR-->
 
-    <!-- [NOVO] Adicionado link 'world' e 'world_fixed' para fixar o robô no ambiente simulado (evita queda) -->
+<!-- _________________________________________ -->
+<!--  PROPIEDADES MECANICAS DO MANIPULADOR  -->
+<!-- _________________________________________ -->
+
+<robot name="MANIPULATOR" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- LINK FIXA DO MUNDO PARA ANCORAR A BASE -->
     <link name="world"/>
+
+    <!-- JOINT FIXA ENTRE BASE E MUNDO PARA ESTABILIDADE -->
     <joint name="world_fixed" type="fixed">
         <parent link="world"/>
         <child link="base_link"/>
     </joint>
 
-    <!-- Macro para criar links (partes físicas) do braço robótico com propriedades visuais, de colisão e inerciais -->
+    <!-- MACRO DE CRIAR LINKS -->
     <xacro:macro name = "arm_links" params="lenght width name mass">
         <link name="${name}_link">
-            <visual> <!-- Model that you see on the visualization -->
+            <visual> <!-- GEOMETRIA VISUAL DE CAIXA-->
                 <geometry>
                     <box size="${width} ${width} ${lenght}"/>
                 </geometry>
@@ -21,14 +29,14 @@
                 </material>
             </visual>
 
-            <collision>
+            <collision> <!-- GEOMETRIA DE COLISÃO DE CAIXA-->
                 <geometry>
                     <box size="${width} ${width} ${lenght}"/>
                 </geometry>
                 <origin rpy ="0 0 0" xyz="0 0 ${lenght/2}"/>
             </collision>
 
-            <inertial>
+            <inertial> <!-- PROPRIEDADES INERCIAIS -->
                 <mass value = "${mass}"/>
                 <inertia
                     ixx="1e-3" ixy="0" ixz="0"
@@ -39,7 +47,7 @@
         </link>
     </xacro:macro>
 
-    <!-- Macro para criar juntas (conexões móveis) do tipo revolução entre os links -->
+    <!-- MACRO PARA CRIAR JUNTAS DE REVOLUÇÃO -->
     <xacro:macro name="joint" params="name parent child origin_xyz origin_rpy lower_limit upper_limit axis">
         <joint name="${name}" type="revolute">
             <parent link="${parent}"/>
@@ -50,7 +58,7 @@
         </joint>
     </xacro:macro>
 
-    <!-- Instanciação dos links do braço utilizando a macro 'arm_links' -->
+    <!-- CRIA LINKS QUE COMPÕE O BRAÇO -->
     <xacro:arm_links name = "base" lenght = "0.6" width = "0.3" mass = "100.0"/>
     <xacro:arm_links name = "second" lenght = "0.6" width = "0.25" mass = "1.0"/>
     <xacro:arm_links name = "third" lenght = "0.6" width = "0.30" mass = "1.0"/>
@@ -59,7 +67,7 @@
     <xacro:arm_links name = "right_gripper" lenght = "0.15" width = "0.05" mass = "1.0"/>
     <xacro:arm_links name = "left_gripper" lenght = "0.15" width = "0.05" mass = "1.0"/>
     
-    <!-- Instanciação das juntas do braço utilizando a macro 'joint' -->
+    <!-- CRIA JOINTS ENTRE OS LINKS -->
     <xacro:joint name="base_second_joint" parent="base_link" child="second_link" origin_xyz="0 0 0.6" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
     <xacro:joint name="second_third_joint" parent="second_link" child="third_link" origin_xyz="0 0 0.6" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
     <xacro:joint name="third_fourth_joint" parent="third_link" child="fourth_link" origin_xyz="0 0 0.6" origin_rpy="0 0 0" lower_limit="-1.57" upper_limit="1.57" axis="0 1 0"/>
@@ -72,6 +80,10 @@
         <parent link .../>
         <child link .../>
     </joint>-->
+
+<!-- _________________________________________ -->
+<!--  PROPIEDADES MECANICAS DO MANIPULADOR  -->
+<!-- _________________________________________ -->
 
     <!-- Configuração do ros2_control para o sistema do Gazebo Sim -->
     <ros2_control name="GazeboSimSystem" type="system">
